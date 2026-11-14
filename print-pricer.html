@@ -1,0 +1,1118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Print Pricer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f766e'/%3E%3Cpath d='M16 7l8 4.5v9L16 25l-8-4.5v-9z M8 11.5l8 4.5 8-4.5 M16 16v9' fill='none' stroke='%23fff' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --text: #1b1f24;
+    --muted: #667085;
+    --border: #e1e5ea;
+    --border-strong: #c8ced6;
+    --accent: #0f766e;
+    --accent-ink: #ffffff;
+    --accent-soft: #e3f3f1;
+    --danger: #b42318;
+    --danger-soft: #fdecea;
+    --warn: #8a5a00;
+    --warn-soft: #fff5db;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111418;
+      --surface: #1a1e24;
+      --text: #e7eaee;
+      --muted: #9aa5b4;
+      --border: #2a3039;
+      --border-strong: #3b434e;
+      --accent: #2bb5a6;
+      --accent-ink: #06211e;
+      --accent-soft: #14312e;
+      --danger: #ff8f85;
+      --danger-soft: #3a1f1d;
+      --warn: #f0c868;
+      --warn-soft: #3a2f14;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { color-scheme: light dark; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  input, select, button { font: inherit; color: inherit; }
+
+  /* ---------- header ---------- */
+  .top { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .top-inner { max-width: 1120px; margin: 0 auto; padding: 0 20px; height: 56px; display: flex; align-items: center; gap: 20px; }
+  .brand { font-weight: 650; font-size: 16px; letter-spacing: -.01em; white-space: nowrap; }
+  .tabs { display: flex; gap: 4px; margin-left: auto; }
+  .tab { border: 0; background: none; color: var(--muted); font-weight: 550; padding: 7px 12px; border-radius: 8px; cursor: pointer; }
+  .tab:hover { color: var(--text); background: var(--bg); }
+  .tab[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); }
+  .tab .count { font-size: 12px; opacity: .8; margin-left: 2px; }
+
+  main { max-width: 1120px; margin: 0 auto; padding: 24px 20px 72px; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  .stack { display: grid; gap: 16px; min-width: 0; }
+  .sticky { position: sticky; top: 76px; }
+  .settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+
+  /* ---------- cards & fields ---------- */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; min-width: 0; }
+  .card h2 { margin: 0 0 14px; font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+  .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+  .field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .field.full { grid-column: 1 / -1; }
+  .label { font-size: 13px; font-weight: 550; }
+  .hint { font-size: 12px; color: var(--muted); }
+  input[type=text], input[type=number], input[type=date], input[type=search], select {
+    width: 100%; height: 38px; padding: 0 10px;
+    border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface);
+  }
+  input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input:focus-visible, select:focus-visible, button:focus-visible, .drop:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .unit { position: relative; display: block; min-width: 0; }
+  .unit input { padding-right: 46px; }
+  .unit em { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 13px; color: var(--muted); pointer-events: none; }
+  .unit.warn input { border-color: var(--warn); background: var(--warn-soft); }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .btn { height: 38px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--surface); font-weight: 550; cursor: pointer; white-space: nowrap; }
+  .btn:hover { background: var(--bg); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.small { height: 30px; padding: 0 10px; font-size: 13px; }
+  .btn.quiet { border-color: transparent; background: none; color: var(--accent); padding-left: 0; }
+  .btn.quiet:hover { text-decoration: underline; }
+  .btn.danger { border-color: var(--danger); color: var(--danger); background: var(--danger-soft); }
+  .icon-btn { width: 30px; height: 30px; border: 0; background: none; color: var(--muted); border-radius: 6px; cursor: pointer; font-size: 18px; line-height: 1; }
+  .icon-btn:hover:not(:disabled) { background: var(--bg); color: var(--text); }
+  .icon-btn:disabled { opacity: .3; cursor: default; }
+  .link { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; font-size: inherit; }
+
+  /* ---------- 3MF import ---------- */
+  .drop {
+    display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px; text-align: left; cursor: pointer;
+    border: 1.5px dashed var(--border-strong); border-radius: var(--radius); background: var(--surface);
+  }
+  .drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+  .drop svg { flex: none; color: var(--accent); }
+  .drop strong { display: block; font-weight: 600; }
+  .notice { padding: 12px 14px; border-radius: 8px; font-size: 14px; }
+  .notice.error { background: var(--danger-soft); color: var(--danger); border: 1px solid var(--danger); }
+  .import-head { display: flex; align-items: center; gap: 10px; }
+  .import-head .file { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .plates { display: grid; gap: 8px; margin-top: 12px; }
+  .plate { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; }
+  label.plate { cursor: pointer; }
+  .plate.on { border-color: var(--accent); background: var(--accent-soft); }
+  .plate input { flex: none; accent-color: var(--accent); margin: 0; }
+  .plate img, .plate .noimg { width: 44px; height: 44px; flex: none; border-radius: 6px; object-fit: contain; background: var(--bg); }
+  .plate-main { display: flex; flex-direction: column; min-width: 0; }
+  .plate-main strong { font-weight: 600; }
+
+  /* ---------- filament rows ---------- */
+  .fil-head, .fil-row {
+    display: grid; gap: 8px; align-items: center;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.1fr) 70px 30px;
+    grid-template-areas: "type grams price cost rm";
+  }
+  .has-colors .fil-head, .has-colors .fil-row {
+    grid-template-columns: 14px minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.1fr) 70px 30px;
+    grid-template-areas: "sw type grams price cost rm";
+  }
+  .fil-head { font-size: 12px; color: var(--muted); font-weight: 550; margin-bottom: 6px; }
+  .fil-head .h-type { grid-area: type; } .fil-head .h-grams { grid-area: grams; }
+  .fil-head .h-price { grid-area: price; } .fil-head .h-cost { grid-area: cost; text-align: right; }
+  .fil-row + .fil-row { margin-top: 8px; }
+  .fil-row .swatch { grid-area: sw; width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--border-strong); }
+  .fil-row .fil-type { grid-area: type; }
+  .fil-row .fil-grams { grid-area: grams; }
+  .fil-row .fil-price { grid-area: price; }
+  .fil-row .fil-cost { grid-area: cost; text-align: right; font-variant-numeric: tabular-nums; }
+  .fil-row .fil-rm { grid-area: rm; }
+  .fil-note { grid-column: 1 / -1; font-size: 12px; color: var(--warn); }
+  .card-actions { margin-top: 10px; }
+  .divider { border: 0; border-top: 1px solid var(--border); margin: 16px 0; }
+
+  /* ---------- price summary ---------- */
+  .totals { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .total { padding: 12px 14px; border-radius: 8px; background: var(--bg); min-width: 0; }
+  .total.main { background: var(--accent-soft); }
+  .total small { display: block; font-size: 12px; font-weight: 550; color: var(--muted); }
+  .total strong { display: block; font-size: 26px; line-height: 1.25; letter-spacing: -.02em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .breakdown { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .breakdown th { font-size: 12px; font-weight: 550; color: var(--muted); text-align: right; padding: 0 0 6px 10px; }
+  .breakdown td { padding: 7px 0 7px 10px; border-top: 1px solid var(--border); text-align: right; vertical-align: top; white-space: nowrap; }
+  .breakdown th:first-child, .breakdown td:first-child { text-align: left; padding-left: 0; white-space: normal; }
+  .breakdown .sub { display: block; font-size: 12px; color: var(--muted); }
+  .breakdown .share { color: var(--muted); font-size: 13px; }
+  .breakdown tr.sum td { font-weight: 650; border-top: 1.5px solid var(--border-strong); }
+  .breakdown tr.final td { font-weight: 700; font-size: 16px; border-top: 1.5px solid var(--border-strong); }
+  .save-row { display: flex; gap: 8px; margin-top: 14px; }
+  .save-row .primary { flex: 1; }
+
+  /* ---------- history ---------- */
+  .toolbar { display: flex; gap: 10px 14px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .toolbar input[type=search] { max-width: 320px; }
+  .toolbar .push { margin-left: auto; }
+  .table-wrap { overflow-x: auto; }
+  .history { width: 100%; border-collapse: collapse; }
+  .history th { text-align: left; font-size: 12px; font-weight: 550; color: var(--muted); padding: 0 10px 8px 0; white-space: nowrap; }
+  .history td { padding: 10px 10px 10px 0; border-top: 1px solid var(--border); vertical-align: middle; }
+  .history .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .history td.amount { font-weight: 650; }
+  .history td.actions { text-align: right; white-space: nowrap; padding-right: 0; }
+  .history td.actions .btn + .btn { margin-left: 6px; }
+  .empty { margin: 28px 0 14px; text-align: center; color: var(--muted); }
+
+  /* ---------- settings ---------- */
+  .set-fil { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 30px; gap: 8px; align-items: center; }
+  .set-fil + .set-fil { margin-top: 8px; }
+  .wear-out { margin: 14px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--bg); font-size: 14px; }
+  .settings-foot { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+  .settings-foot .btn { margin-left: auto; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 550;
+    transition: opacity .18s, transform .18s; max-width: calc(100vw - 32px); z-index: 10;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 860px) {
+    .grid, .settings-grid { grid-template-columns: 1fr; }
+    .sticky { position: static; }
+  }
+  @media (max-width: 520px) {
+    .top-inner { padding: 0 12px; gap: 8px; }
+    .tab { padding: 7px 9px; }
+    main { padding: 16px 12px 64px; }
+    .fields { grid-template-columns: 1fr; }
+    .fil-head { display: none; }
+    .fil-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 30px; grid-template-areas: "type type rm" "grams price ."; }
+    .has-colors .fil-row { grid-template-columns: 14px minmax(0, 1fr) minmax(0, 1fr) 30px; grid-template-areas: "sw type type rm" ". grams price ."; }
+    .fil-row .fil-cost { display: none; }
+    .fil-row + .fil-row { margin-top: 14px; }
+    .total strong { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">Print Pricer</div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button type="button" class="tab" role="tab" data-tab="quote" aria-selected="true">Quote</button>
+      <button type="button" class="tab" role="tab" data-tab="history" aria-selected="false">History <span class="count" id="historyCount"></span></button>
+      <button type="button" class="tab" role="tab" data-tab="settings" aria-selected="false">Settings</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- ================= QUOTE ================= -->
+  <section id="tab-quote" class="tabpanel" role="tabpanel">
+    <div class="grid">
+      <div class="stack">
+        <button type="button" class="drop" id="drop">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4"/><path d="M8 8l4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+          <span>
+            <strong>Drop a sliced Bambu Studio .3mf here</strong>
+            <span class="hint">or click to choose a file. It fills in the print time and filament weight.</span>
+          </span>
+        </button>
+        <input type="file" id="fileInput" accept=".3mf" hidden>
+        <div id="importError" class="notice error" role="alert" hidden></div>
+        <div id="importResult" class="card" hidden></div>
+
+        <div class="card">
+          <h2>Print</h2>
+          <div id="filamentList">
+            <div class="fil-head" aria-hidden="true">
+              <span class="h-type">Filament</span><span class="h-grams">Weight</span><span class="h-price">Price</span><span class="h-cost">Cost</span>
+            </div>
+            <div id="jobFilaments"></div>
+          </div>
+          <div class="card-actions"><button type="button" class="btn small quiet" id="addFilament">+ Add filament</button></div>
+          <hr class="divider">
+          <div class="fields">
+            <div class="field">
+              <span class="label">Print time</span>
+              <span class="pair">
+                <span class="unit"><input type="number" min="0" step="1" inputmode="numeric" data-job="printH" aria-label="Print time, hours"><em>h</em></span>
+                <span class="unit"><input type="number" min="0" step="1" inputmode="numeric" data-job="printM" aria-label="Print time, minutes"><em>min</em></span>
+              </span>
+            </div>
+            <label class="field">
+              <span class="label">Items per print</span>
+              <input type="number" min="1" step="1" inputmode="numeric" data-job="itemsPerPrint">
+              <span class="hint">How many items the filament and time above produce.</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Order</h2>
+          <div class="fields">
+            <label class="field">
+              <span class="label">Quantity</span>
+              <input type="number" min="1" step="1" inputmode="numeric" data-job="qty">
+              <span class="hint">Items in this order.</span>
+            </label>
+            <div class="field">
+              <span class="label">Design / labour time</span>
+              <span class="pair">
+                <span class="unit"><input type="number" min="0" step="1" inputmode="numeric" data-job="designH" aria-label="Design and labour time, hours"><em>h</em></span>
+                <span class="unit"><input type="number" min="0" step="1" inputmode="numeric" data-job="designM" aria-label="Design and labour time, minutes"><em>min</em></span>
+              </span>
+              <span class="hint">Charged once for the whole order.</span>
+            </div>
+            <div class="field">
+              <span class="label">Post-processing time</span>
+              <span class="pair">
+                <span class="unit"><input type="number" min="0" step="1" inputmode="numeric" data-job="postH" aria-label="Post-processing time, hours"><em>h</em></span>
+                <span class="unit"><input type="number" min="0" step="1" inputmode="numeric" data-job="postM" aria-label="Post-processing time, minutes"><em>min</em></span>
+              </span>
+              <span class="hint">Per item.</span>
+            </div>
+            <div class="field">
+              <span class="label">Extra costs</span>
+              <span class="pair">
+                <span class="unit"><input type="number" min="0" step="any" inputmode="decimal" data-job="extrasItem" aria-label="Extra costs per item, euros"><em>€</em></span>
+                <span class="unit"><input type="number" min="0" step="any" inputmode="decimal" data-job="extrasOrder" aria-label="Extra costs per order, euros"><em>€</em></span>
+              </span>
+              <span class="hint">Left: per item (inserts, magnets). Right: per order (packaging).</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="stack sticky">
+        <div class="card">
+          <h2>Price</h2>
+          <div class="totals">
+            <div class="total main"><small>Price per item</small><strong id="perItem">€0.00</strong></div>
+            <div class="total"><small id="orderLabel">Order total</small><strong id="orderTotal">€0.00</strong></div>
+          </div>
+          <table class="breakdown">
+            <thead><tr><th>Breakdown</th><th>Per item</th><th>Order</th><th>Share</th></tr></thead>
+            <tbody id="breakdownBody"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h2>Save quote</h2>
+          <div class="fields">
+            <label class="field full"><span class="label">Item name</span><input type="text" data-job="item" autocomplete="off"></label>
+            <label class="field"><span class="label">Customer</span><input type="text" data-job="customer" autocomplete="off"></label>
+            <label class="field"><span class="label">Date</span><input type="date" data-job="date"></label>
+          </div>
+          <div class="save-row">
+            <button type="button" class="btn primary" id="saveQuote">Save quote</button>
+            <button type="button" class="btn" id="clearJob">Clear</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ================= HISTORY ================= -->
+  <section id="tab-history" class="tabpanel" role="tabpanel" hidden>
+    <div class="card">
+      <div class="toolbar">
+        <input type="search" id="historySearch" placeholder="Search customer, item or date" aria-label="Search quotes">
+        <span class="hint" id="historySummary"></span>
+        <button type="button" class="btn push" id="exportCsv">Export CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table class="history" id="historyTable">
+          <thead><tr><th>Date</th><th>Customer</th><th>Item</th><th class="num">Qty</th><th class="num">Per item</th><th class="num">Total</th><th></th></tr></thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="historyEmpty" hidden></p>
+    </div>
+  </section>
+
+  <!-- ================= SETTINGS ================= -->
+  <section id="tab-settings" class="tabpanel" role="tabpanel" hidden>
+    <div class="settings-grid">
+      <div class="card">
+        <h2>Filaments</h2>
+        <div id="setFilaments"></div>
+        <div class="card-actions"><button type="button" class="btn small quiet" id="addSetFilament">+ Add filament</button></div>
+      </div>
+
+      <div class="card">
+        <h2>Pricing</h2>
+        <div class="fields">
+          <label class="field"><span class="label">Labour rate</span><span class="unit"><input type="number" min="0" step="any" inputmode="decimal" data-setting="labourRate"><em>€/h</em></span></label>
+          <label class="field"><span class="label">Profit margin</span><span class="unit"><input type="number" min="0" step="any" inputmode="decimal" data-setting="margin"><em>%</em></span><span class="hint">Added on top of total cost.</span></label>
+          <label class="field"><span class="label">Failure buffer</span><span class="unit"><input type="number" min="0" step="any" inputmode="decimal" data-setting="failureBuffer"><em>%</em></span><span class="hint">Of material, electricity and wear.</span></label>
+          <label class="field"><span class="label">Minimum order price</span><span class="unit"><input type="number" min="0" step="any" inputmode="decimal" data-setting="minOrder"><em>€</em></span></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Electricity</h2>
+        <div class="fields">
+          <label class="field"><span class="label">Electricity price</span><span class="unit"><input type="number" min="0" step="any" inputmode="decimal" data-setting="electricityPrice"><em>€/kWh</em></span></label>
+          <label class="field"><span class="label">Printer average power</span><span class="unit"><input type="number" min="0" step="any" inputmode="decimal" data-setting="printerPower"><em>W</em></span></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Printer wear</h2>
+        <div class="fields">
+          <label class="field"><span class="label">Printer price</span><span class="unit"><input type="number" min="0" step="any" inputmode="decimal" data-setting="printerPrice"><em>€</em></span></label>
+          <label class="field"><span class="label">Expected lifetime</span><span class="unit"><input type="number" min="0" step="any" inputmode="decimal" data-setting="printerLifetime"><em>h</em></span></label>
+          <label class="field"><span class="label">Maintenance</span><span class="unit"><input type="number" min="0" step="any" inputmode="decimal" data-setting="maintenancePerHour"><em>€/h</em></span><span class="hint">Nozzles, plates, belts, etc.</span></label>
+        </div>
+        <p class="wear-out" id="wearOut"></p>
+      </div>
+    </div>
+    <div class="settings-foot">
+      <span class="hint">Rates are saved automatically in this browser.</span>
+      <button type="button" class="btn small" id="resetSettings">Reset to defaults</button>
+    </div>
+  </section>
+</main>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const KEYS = {
+    settings: 'printPricer.settings.v1',
+    quotes: 'printPricer.quotes.v1',
+    draft: 'printPricer.draft.v1',
+  };
+
+  // Starting rates. Everything here is editable in the Settings tab.
+  const DEFAULT_SETTINGS = {
+    filaments: [
+      { id: 'pla', name: 'PLA', price: 22 },
+      { id: 'petg', name: 'PETG', price: 22 },
+      { id: 'abs', name: 'ABS', price: 25 },
+      { id: 'asa', name: 'ASA', price: 30 },
+      { id: 'tpu', name: 'TPU', price: 38 },
+    ],
+    electricityPrice: 0.30,   // € per kWh
+    printerPower: 120,        // average W while printing
+    printerPrice: 549,        // €
+    printerLifetime: 5000,    // hours
+    maintenancePerHour: 0.05, // € per print hour
+    failureBuffer: 10,        // % of material + electricity + wear
+    labourRate: 15,           // € per hour
+    margin: 30,               // % on top of cost
+    minOrder: 5,              // €
+  };
+
+  const UNSLICED_MSG = 'This .3mf has not been sliced, so it has no print time or filament weight. '
+    + 'In Bambu Studio, slice the plate, then choose File → Export → Export plate sliced file and drop that .gcode.3mf here.';
+
+  /* ---------------- helpers ---------------- */
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // Reads a number from an input; blanks, junk and negatives count as 0. Accepts a decimal comma.
+  const num = v => { const n = parseFloat(String(v ?? '').replace(',', '.')); return Number.isFinite(n) && n > 0 ? n : 0; };
+  const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+  const todayISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+
+  const eurFmt = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR' });
+  const numFmt = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
+  const fmt = n => eurFmt.format(round2(n));
+  const fmtNum = n => numFmt.format(n);
+  const fmtHours = hours => {
+    const mins = Math.round(hours * 60);
+    const h = Math.floor(mins / 60), m = mins % 60;
+    return h ? (m ? `${h} h ${m} min` : `${h} h`) : `${m} min`;
+  };
+  const displayDate = iso => {
+    const d = new Date(iso + 'T00:00:00');
+    return Number.isNaN(d.getTime()) ? (iso || '') : d.toLocaleDateString();
+  };
+
+  function loadJSON(key, fallback) {
+    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+    catch { return fallback; }
+  }
+  function saveJSON(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+    catch { return false; }
+  }
+
+  let toastTimer;
+  function toast(message) {
+    const el = $('#toast');
+    el.textContent = message;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+
+  // First click arms the button, second click within 3 s runs the action.
+  function confirmClick(btn, armedLabel, action) {
+    if (btn.dataset.armed) { action(); return; }
+    const original = btn.textContent;
+    btn.dataset.armed = '1';
+    btn.textContent = armedLabel;
+    btn.classList.add('danger');
+    setTimeout(() => {
+      if (!btn.isConnected) return;
+      delete btn.dataset.armed;
+      btn.textContent = original;
+      btn.classList.remove('danger');
+    }, 3000);
+  }
+
+  /* ---------------- state ---------------- */
+  function loadSettings() {
+    const saved = loadJSON(KEYS.settings, null);
+    const s = { ...clone(DEFAULT_SETTINGS), ...(saved && typeof saved === 'object' ? saved : {}) };
+    if (!Array.isArray(s.filaments)) s.filaments = clone(DEFAULT_SETTINGS.filaments);
+    return s;
+  }
+  let settings = loadSettings();
+
+  function newFilamentRow() {
+    const t = settings.filaments[0];
+    return { typeId: t ? t.id : 'custom', label: '', color: '', grams: '', price: t ? t.price : '', custom: false };
+  }
+  function blankJob() {
+    return {
+      item: '', customer: '', date: todayISO(),
+      filaments: [newFilamentRow()],
+      printH: '', printM: '', itemsPerPrint: 1, qty: 1,
+      designH: '', designM: '', postH: '', postM: '',
+      extrasItem: '', extrasOrder: '',
+    };
+  }
+  function normaliseJob(raw) {
+    const j = { ...blankJob(), ...(raw && typeof raw === 'object' ? raw : {}) };
+    if (!Array.isArray(j.filaments) || !j.filaments.length) j.filaments = [newFilamentRow()];
+    j.filaments = j.filaments.map(f => ({ ...newFilamentRow(), ...f }));
+    return j;
+  }
+  let job = normaliseJob(loadJSON(KEYS.draft, null));
+  job.date = todayISO();
+
+  let quotes = loadJSON(KEYS.quotes, []);
+  if (!Array.isArray(quotes)) quotes = [];
+  let shownQuotes = [];
+
+  let imported = null; // { fileName, plates: [...], selection: 'all' | plateIndex }
+
+  const saveSettings = () => { if (!saveJSON(KEYS.settings, settings)) toast('Could not save settings. Browser storage is blocked or full.'); };
+  const saveDraft = () => saveJSON(KEYS.draft, job);
+
+  /* ---------------- pricing ---------------- */
+  function wearPerHour(s) {
+    const life = num(s.printerLifetime);
+    return (life ? num(s.printerPrice) / life : 0) + num(s.maintenancePerHour);
+  }
+
+  // Filament and print time describe one print, which makes `itemsPerPrint` items.
+  // Everything is scaled to the ordered quantity; design time and per-order extras are charged once.
+  function calculate(job, s) {
+    const qty = Math.max(1, Math.floor(num(job.qty)));
+    const perPrint = Math.max(1, Math.floor(num(job.itemsPerPrint)));
+    const runs = qty / perPrint;
+
+    const printHours = (num(job.printH) + num(job.printM) / 60) * runs;
+    const grams = job.filaments.reduce((t, f) => t + num(f.grams), 0) * runs;
+    const material = job.filaments.reduce((t, f) => t + num(f.grams) / 1000 * num(f.price), 0) * runs;
+    const electricity = printHours * num(s.printerPower) / 1000 * num(s.electricityPrice);
+    const wear = printHours * wearPerHour(s);
+    const failure = (material + electricity + wear) * num(s.failureBuffer) / 100;
+
+    const labourHours = num(job.designH) + num(job.designM) / 60 + (num(job.postH) + num(job.postM) / 60) * qty;
+    const labour = labourHours * num(s.labourRate);
+    const extras = num(job.extrasItem) * qty + num(job.extrasOrder);
+
+    const cost = material + electricity + wear + failure + labour + extras;
+    const margin = cost * num(s.margin) / 100;
+    const subtotal = cost + margin;
+    const total = cost > 0 ? round2(Math.max(subtotal, num(s.minOrder))) : 0;
+    const topUp = Math.max(0, total - subtotal);
+
+    return { qty, perPrint, printHours, grams, labourHours, material, electricity, wear, failure, labour, extras, cost, margin, subtotal, topUp, total, perItem: total / qty };
+  }
+
+  function renderSummary() {
+    const r = calculate(job, settings);
+    $('#perItem').textContent = fmt(r.perItem);
+    $('#orderTotal').textContent = fmt(r.total);
+    $('#orderLabel').textContent = r.qty === 1 ? 'Order total' : `Order total · ${r.qty} items`;
+
+    const share = v => (r.total > 0 ? Math.round(v / r.total * 100) + '%' : '–');
+    const row = (label, sub, value, cls = '') => `<tr class="${cls}">
+        <td>${esc(label)}${sub ? `<span class="sub">${esc(sub)}</span>` : ''}</td>
+        <td>${fmt(value / r.qty)}</td><td>${fmt(value)}</td><td class="share">${cls ? '' : share(value)}</td>
+      </tr>`;
+
+    let html = '';
+    html += row('Material', `${fmtNum(r.grams)} g of filament`, r.material);
+    html += row('Electricity', `${fmtHours(r.printHours)} at ${fmtNum(num(settings.printerPower))} W`, r.electricity);
+    html += row('Printer wear', `${fmt(wearPerHour(settings))} per print hour`, r.wear);
+    html += row('Failure buffer', `${fmtNum(num(settings.failureBuffer))}% of the three above`, r.failure);
+    html += row('Labour', `${fmtHours(r.labourHours)} at ${fmt(num(settings.labourRate))}/h`, r.labour);
+    html += row('Extras', 'Packaging, inserts, etc.', r.extras);
+    html += row('Total cost', '', r.cost, 'sum');
+    html += row('Margin', `${fmtNum(num(settings.margin))}% on cost`, r.margin);
+    if (r.topUp >= 0.005) html += row('Minimum order top-up', `Raised to the ${fmt(num(settings.minOrder))} minimum`, r.topUp);
+    html += row('Final price', '', r.total, 'final');
+    $('#breakdownBody').innerHTML = html;
+  }
+
+  function jobChanged() {
+    renderSummary();
+    saveDraft();
+  }
+
+  /* ---------------- job form ---------------- */
+  function syncJobInputs() {
+    $$('[data-job]').forEach(el => { el.value = job[el.dataset.job] ?? ''; });
+  }
+
+  const cleanColor = c => (/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(c || '') ? c : '');
+
+  function renderJobFilaments() {
+    const hasColors = job.filaments.some(f => cleanColor(f.color));
+    $('#filamentList').classList.toggle('has-colors', hasColors);
+    $('#jobFilaments').innerHTML = job.filaments.map((f, i) => {
+      const known = settings.filaments.some(t => t.id === f.typeId);
+      const unsaved = !known && f.label;
+      const options = settings.filaments.map(t => `<option value="${esc(t.id)}"${t.id === f.typeId ? ' selected' : ''}>${esc(t.name)}</option>`).join('')
+        + `<option value="custom"${known ? '' : ' selected'}>${unsaved ? esc(f.label) + ' (new)' : 'Other'}</option>`;
+      const color = cleanColor(f.color);
+      return `<div class="fil-row" data-i="${i}">
+        ${hasColors ? `<span class="swatch" style="${color ? `background:${color}` : ''}" title="${color}"></span>` : ''}
+        <select class="fil-type" aria-label="Filament type">${options}</select>
+        <span class="unit fil-grams"><input type="number" min="0" step="any" inputmode="decimal" value="${esc(f.grams)}" data-f="grams" aria-label="Filament weight in grams"><em>g</em></span>
+        <span class="unit fil-price${num(f.price) ? '' : ' warn'}"><input type="number" min="0" step="any" inputmode="decimal" value="${esc(f.price)}" data-f="price" aria-label="Filament price per kilogram"><em>€/kg</em></span>
+        <span class="fil-cost">${fmt(num(f.grams) / 1000 * num(f.price))}</span>
+        <button type="button" class="icon-btn fil-rm" data-act="remove" aria-label="Remove filament"${job.filaments.length === 1 ? ' disabled' : ''}>×</button>
+        ${unsaved ? `<div class="fil-note">“${esc(f.label)}” is not in your saved filaments. Set its price, then <button type="button" class="link" data-act="save-type">save it for next time</button>.</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  // Keeps job rows in step with the saved filament list (prices, renamed or removed types).
+  function relinkJobFilaments() {
+    job.filaments.forEach(f => {
+      const t = settings.filaments.find(t => t.id === f.typeId);
+      if (t) { if (!f.custom) f.price = t.price; f.name = t.name; return; }
+      if (f.typeId !== 'custom') { f.label = f.label || f.name || ''; f.typeId = 'custom'; }
+    });
+  }
+
+  $('#tab-quote').addEventListener('input', e => {
+    const key = e.target.dataset.job;
+    if (!key) return;
+    job[key] = e.target.value;
+    jobChanged();
+  });
+
+  $('#jobFilaments').addEventListener('input', e => {
+    const key = e.target.dataset.f;
+    const row = e.target.closest('.fil-row');
+    if (!key || !row) return;
+    const f = job.filaments[+row.dataset.i];
+    f[key] = e.target.value;
+    if (key === 'price') {
+      f.custom = true;
+      $('.fil-price', row).classList.toggle('warn', !num(f.price));
+    }
+    $('.fil-cost', row).textContent = fmt(num(f.grams) / 1000 * num(f.price));
+    jobChanged();
+  });
+
+  $('#jobFilaments').addEventListener('change', e => {
+    if (!e.target.matches('.fil-type')) return;
+    const f = job.filaments[+e.target.closest('.fil-row').dataset.i];
+    const t = settings.filaments.find(t => t.id === e.target.value);
+    f.typeId = e.target.value;
+    if (t) { f.price = t.price; f.custom = false; f.name = t.name; }
+    renderJobFilaments();
+    jobChanged();
+  });
+
+  $('#jobFilaments').addEventListener('click', e => {
+    const btn = e.target.closest('[data-act]');
+    if (!btn) return;
+    const i = +btn.closest('.fil-row').dataset.i;
+    const f = job.filaments[i];
+    if (btn.dataset.act === 'remove') {
+      job.filaments.splice(i, 1);
+    } else if (btn.dataset.act === 'save-type') {
+      if (!num(f.price)) { toast('Enter a price per kg first'); return; }
+      const name = f.label.trim();
+      const t = { id: uid(), name, price: num(f.price) };
+      settings.filaments.push(t);
+      job.filaments.forEach(o => {
+        if (o.typeId === 'custom' && o.label.trim().toLowerCase() === name.toLowerCase()) {
+          o.typeId = t.id; o.name = name; o.custom = false;
+          if (!num(o.price)) o.price = t.price;
+        }
+      });
+      saveSettings();
+      renderSettingsFilaments();
+      toast(`Saved “${name}” to your filaments`);
+    }
+    renderJobFilaments();
+    jobChanged();
+  });
+
+  $('#addFilament').addEventListener('click', () => {
+    job.filaments.push(newFilamentRow());
+    renderJobFilaments();
+    jobChanged();
+    const inputs = $$('#jobFilaments [data-f="grams"]');
+    inputs[inputs.length - 1].focus();
+  });
+
+  $('#clearJob').addEventListener('click', e => {
+    confirmClick(e.currentTarget, 'Clear everything?', () => {
+      job = blankJob();
+      clearImport();
+      showImportError('');
+      syncJobInputs();
+      renderJobFilaments();
+      jobChanged();
+      const btn = $('#clearJob');
+      delete btn.dataset.armed; btn.textContent = 'Clear'; btn.classList.remove('danger');
+    });
+  });
+
+  /* ---------------- 3MF import ---------------- */
+  const drop = $('#drop');
+  const fileInput = $('#fileInput');
+
+  function showImportError(message) {
+    const el = $('#importError');
+    el.textContent = message;
+    el.hidden = !message;
+  }
+
+  function clearImport() {
+    if (imported) imported.plates.forEach(p => { if (p.thumb) URL.revokeObjectURL(p.thumb); });
+    imported = null;
+    renderImport();
+  }
+
+  const zipEntry = (zip, path) => Object.values(zip.files).find(f => !f.dir && f.name.replace(/\\/g, '/').toLowerCase() === path.toLowerCase());
+
+  const xmlChildren = (el, tag) => [...el.children].filter(c => c.tagName === tag);
+  function parseXml(text) {
+    const doc = new DOMParser().parseFromString(text, 'application/xml');
+    if (doc.getElementsByTagName('parsererror').length) throw new Error('Invalid XML');
+    return doc;
+  }
+  function plateMeta(plateEl) {
+    const meta = {};
+    xmlChildren(plateEl, 'metadata').forEach(m => { meta[m.getAttribute('key')] = m.getAttribute('value'); });
+    return meta;
+  }
+
+  // Metadata/slice_info.config: one <plate> per sliced plate, with "prediction" (seconds),
+  // "weight" (grams) and a <filament used_g="..."> for each filament used.
+  function parseSliceInfo(text) {
+    const plates = [];
+    [...parseXml(text).getElementsByTagName('plate')].forEach((plateEl, i) => {
+      const meta = plateMeta(plateEl);
+      const seconds = num(meta.prediction);
+      const weight = num(meta.weight);
+      let filaments = xmlChildren(plateEl, 'filament').map(f => ({
+        slot: f.getAttribute('id') || '',
+        type: (f.getAttribute('type') || '').trim() || 'Filament',
+        color: cleanColor(f.getAttribute('color')),
+        grams: num(f.getAttribute('used_g')),
+      })).filter(f => f.grams > 0);
+      if (!filaments.length && weight > 0) filaments = [{ slot: '', type: 'Filament', color: '', grams: weight }];
+      if (!seconds && !filaments.length) return;
+      plates.push({
+        index: parseInt(meta.index, 10) || i + 1,
+        seconds,
+        grams: filaments.reduce((t, f) => t + f.grams, 0),
+        filaments,
+        objects: xmlChildren(plateEl, 'object').filter(o => o.getAttribute('skipped') !== 'true').length,
+        name: '',
+        thumb: '',
+      });
+    });
+    return plates;
+  }
+
+  // Plate names live in Metadata/model_settings.config. They are optional, so failures are ignored.
+  async function readPlateNames(zip) {
+    const names = {};
+    const entry = zipEntry(zip, 'Metadata/model_settings.config');
+    if (!entry) return names;
+    try {
+      [...parseXml(await entry.async('string')).getElementsByTagName('plate')].forEach(plateEl => {
+        const meta = plateMeta(plateEl);
+        if (meta.plater_id && meta.plater_name) names[parseInt(meta.plater_id, 10)] = meta.plater_name;
+      });
+    } catch { /* names are a nicety */ }
+    return names;
+  }
+
+  async function importFile(file) {
+    showImportError('');
+    if (!/\.3mf$/i.test(file.name)) {
+      return showImportError(`“${file.name}” is not a .3mf file. Drop the sliced file exported from Bambu Studio (it ends in .gcode.3mf).`);
+    }
+    if (!window.JSZip) {
+      return showImportError('The unzip library (JSZip) could not be loaded, so .3mf files cannot be read right now. Check your internet connection and reload the page.');
+    }
+    let zip;
+    try { zip = await window.JSZip.loadAsync(file); }
+    catch { return showImportError(`“${file.name}” could not be opened. It does not look like a valid .3mf file.`); }
+
+    const entry = zipEntry(zip, 'Metadata/slice_info.config');
+    if (!entry) return showImportError(UNSLICED_MSG);
+    let plates;
+    try { plates = parseSliceInfo(await entry.async('string')); }
+    catch { return showImportError(`The slice information in “${file.name}” could not be read.`); }
+    if (!plates.length) return showImportError(UNSLICED_MSG);
+
+    const names = await readPlateNames(zip);
+    for (const p of plates) {
+      p.name = names[p.index] || '';
+      const img = zipEntry(zip, `Metadata/plate_${p.index}.png`);
+      if (img) {
+        try { p.thumb = URL.createObjectURL(new Blob([await img.async('arraybuffer')], { type: 'image/png' })); }
+        catch { /* thumbnails are a nicety */ }
+      }
+    }
+
+    clearImport();
+    imported = { fileName: file.name, plates, selection: plates.length > 1 ? 'all' : plates[0].index };
+    if (!String(job.item).trim()) job.item = file.name.replace(/(\.gcode)?\.3mf$/i, '');
+    applyImportSelection();
+    renderImport();
+  }
+
+  const matchFilament = type => {
+    const key = type.trim().toLowerCase();
+    return settings.filaments.find(t => t.name.trim().toLowerCase() === key)
+      || settings.filaments.find(t => t.name.trim().toLowerCase().startsWith(key + ' '));
+  };
+
+  // Copies the chosen plate (or the sum of all plates) into the print fields.
+  function applyImportSelection() {
+    const chosen = imported.selection === 'all' ? imported.plates : imported.plates.filter(p => p.index === imported.selection);
+    const merged = new Map();
+    chosen.forEach(p => p.filaments.forEach(f => {
+      const key = f.type.toLowerCase() + '|' + f.color.toLowerCase();
+      const existing = merged.get(key);
+      if (existing) existing.grams += f.grams; else merged.set(key, { ...f });
+    }));
+
+    job.filaments = [...merged.values()].map(f => {
+      const t = matchFilament(f.type);
+      return { typeId: t ? t.id : 'custom', name: t ? t.name : '', label: f.type, color: f.color, grams: round2(f.grams), price: t ? t.price : '', custom: false };
+    });
+    if (!job.filaments.length) job.filaments = [newFilamentRow()];
+
+    const minutes = Math.round(chosen.reduce((t, p) => t + p.seconds, 0) / 60);
+    job.printH = Math.floor(minutes / 60);
+    job.printM = minutes % 60;
+
+    syncJobInputs();
+    renderJobFilaments();
+    jobChanged();
+  }
+
+  function renderImport() {
+    const box = $('#importResult');
+    if (!imported) { box.hidden = true; box.innerHTML = ''; return; }
+    const { fileName, plates, selection } = imported;
+    const multi = plates.length > 1;
+    const anyThumb = plates.some(p => p.thumb);
+
+    const details = p => {
+      const parts = [fmtHours(p.seconds / 3600), `${fmtNum(p.grams)} g`];
+      if (p.filaments.length > 1) parts.push(p.filaments.map(f => `${f.type} ${fmtNum(f.grams)} g`).join(' + '));
+      if (p.objects > 1) parts.push(`${p.objects} objects`);
+      return parts.join(' · ');
+    };
+    const plateRow = p => {
+      const on = selection === p.index;
+      const inner = `${multi ? `<input type="radio" name="plate" value="${p.index}"${on ? ' checked' : ''}>` : ''}
+        ${p.thumb ? `<img src="${p.thumb}" alt="">` : (anyThumb ? '<span class="noimg"></span>' : '')}
+        <span class="plate-main"><strong>Plate ${p.index}${p.name ? ' · ' + esc(p.name) : ''}</strong><span class="hint">${esc(details(p))}</span></span>`;
+      return multi ? `<label class="plate${on ? ' on' : ''}">${inner}</label>` : `<div class="plate on">${inner}</div>`;
+    };
+    const allRow = () => {
+      const on = selection === 'all';
+      const seconds = plates.reduce((t, p) => t + p.seconds, 0);
+      const grams = plates.reduce((t, p) => t + p.grams, 0);
+      return `<label class="plate${on ? ' on' : ''}">
+        <input type="radio" name="plate" value="all"${on ? ' checked' : ''}>
+        <span class="plate-main"><strong>All ${plates.length} plates together</strong><span class="hint">${esc(fmtHours(seconds / 3600))} · ${esc(fmtNum(grams))} g</span></span>
+      </label>`;
+    };
+
+    box.innerHTML = `<div class="import-head">
+        <span class="file" title="${esc(fileName)}">${esc(fileName)}</span>
+        <button type="button" class="icon-btn" id="clearImportBtn" aria-label="Remove imported file">×</button>
+      </div>
+      ${multi ? '<div class="hint">Pick the plate to price, or add them all together.</div>' : ''}
+      <div class="plates">${multi ? allRow() : ''}${plates.map(plateRow).join('')}</div>`;
+    box.hidden = false;
+  }
+
+  $('#importResult').addEventListener('change', e => {
+    if (e.target.name !== 'plate' || !imported) return;
+    imported.selection = e.target.value === 'all' ? 'all' : parseInt(e.target.value, 10);
+    applyImportSelection();
+    renderImport();
+  });
+  $('#importResult').addEventListener('click', e => {
+    if (e.target.closest('#clearImportBtn')) clearImport();
+  });
+
+  drop.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    fileInput.value = '';
+    if (file) importFile(file);
+  });
+
+  // A file can be dropped anywhere on the page, not only on the drop zone.
+  const hasFiles = e => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+  let dragDepth = 0;
+  window.addEventListener('dragenter', e => { if (hasFiles(e)) { dragDepth++; drop.classList.add('over'); } });
+  window.addEventListener('dragleave', e => { if (hasFiles(e) && --dragDepth <= 0) { dragDepth = 0; drop.classList.remove('over'); } });
+  window.addEventListener('dragover', e => { if (hasFiles(e)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } });
+  window.addEventListener('drop', e => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    dragDepth = 0;
+    drop.classList.remove('over');
+    const file = e.dataTransfer.files[0];
+    if (file) { switchTab('quote'); importFile(file); }
+  });
+
+  /* ---------------- quote history ---------------- */
+  function renderHistory() {
+    const terms = $('#historySearch').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const sorted = [...quotes].sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.created || 0) - (a.created || 0));
+    shownQuotes = sorted.filter(q => {
+      const haystack = `${q.date} ${displayDate(q.date)} ${q.customer} ${q.item}`.toLowerCase();
+      return terms.every(t => haystack.includes(t));
+    });
+
+    $('#historyBody').innerHTML = shownQuotes.map(q => `<tr data-id="${esc(q.id)}">
+        <td>${esc(displayDate(q.date))}</td>
+        <td>${esc(q.customer) || '<span class="hint">–</span>'}</td>
+        <td>${esc(q.item)}</td>
+        <td class="num">${esc(q.qty)}</td>
+        <td class="num">${fmt(num(q.perItem))}</td>
+        <td class="num amount">${fmt(num(q.total))}</td>
+        <td class="actions">
+          <button type="button" class="btn small" data-act="load" title="Open in the calculator, using your current rates">Open</button><button type="button" class="btn small" data-act="delete">Delete</button>
+        </td>
+      </tr>`).join('');
+
+    const empty = $('#historyEmpty');
+    empty.hidden = shownQuotes.length > 0;
+    empty.textContent = quotes.length ? 'No quotes match your search.' : 'No saved quotes yet. Price a job on the Quote tab and press “Save quote”.';
+    $('#historyTable').hidden = !shownQuotes.length;
+
+    const sum = shownQuotes.reduce((t, q) => t + num(q.total), 0);
+    $('#historySummary').textContent = shownQuotes.length
+      ? `${shownQuotes.length} ${shownQuotes.length === 1 ? 'quote' : 'quotes'} · ${fmt(sum)}`
+      : '';
+    $('#historyCount').textContent = quotes.length ? quotes.length : '';
+  }
+
+  function saveQuote() {
+    const r = calculate(job, settings);
+    if (!String(job.item).trim()) {
+      toast('Give the item a name first');
+      $('[data-job="item"]').focus();
+      return;
+    }
+    if (r.total <= 0) { toast('Nothing to price yet. Add filament or print time.'); return; }
+    quotes.unshift({
+      id: uid(), created: Date.now(),
+      date: job.date || todayISO(),
+      customer: String(job.customer).trim(),
+      item: String(job.item).trim(),
+      qty: r.qty,
+      perItem: round2(r.perItem),
+      total: r.total,
+      grams: round2(r.grams),
+      printHours: round2(r.printHours),
+      job: clone(job),
+    });
+    if (!saveJSON(KEYS.quotes, quotes)) {
+      quotes.shift();
+      toast('Could not save. Browser storage is blocked or full.');
+      return;
+    }
+    renderHistory();
+    toast('Quote saved to history');
+  }
+
+  function exportCsv() {
+    if (!shownQuotes.length) { toast('No quotes to export'); return; }
+    // Text that starts with = + - @ would be run as a formula by spreadsheet apps, so it is prefixed.
+    const text = v => { const s = String(v ?? ''); return /^[=+\-@\t\r]/.test(s) ? "'" + s : s; };
+    const cell = v => { const s = String(v ?? ''); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const head = ['Date', 'Customer', 'Item', 'Quantity', 'Price per item (EUR)', 'Total (EUR)', 'Filament (g)', 'Print time (h)'];
+    const lines = shownQuotes.map(q => [
+      q.date, text(q.customer), text(q.item), q.qty,
+      num(q.perItem).toFixed(2), num(q.total).toFixed(2), num(q.grams).toFixed(1), num(q.printHours).toFixed(2),
+    ].map(cell).join(','));
+    const blob = new Blob(['﻿' + [head.join(','), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `print-quotes-${todayISO()}.csv`;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  $('#saveQuote').addEventListener('click', saveQuote);
+  $('#exportCsv').addEventListener('click', exportCsv);
+  $('#historySearch').addEventListener('input', renderHistory);
+  $('#historyBody').addEventListener('click', e => {
+    const btn = e.target.closest('[data-act]');
+    if (!btn) return;
+    const id = btn.closest('tr').dataset.id;
+    const q = quotes.find(x => x.id === id);
+    if (!q) return;
+    if (btn.dataset.act === 'load') {
+      job = normaliseJob(q.job ? clone(q.job) : null);
+      job.date = q.date;
+      clearImport();
+      showImportError('');
+      relinkJobFilaments();
+      syncJobInputs();
+      renderJobFilaments();
+      jobChanged();
+      switchTab('quote');
+      toast('Quote opened. Prices use your current rates.');
+    } else {
+      confirmClick(btn, 'Delete?', () => {
+        quotes = quotes.filter(x => x.id !== id);
+        saveJSON(KEYS.quotes, quotes);
+        renderHistory();
+      });
+    }
+  });
+
+  /* ---------------- settings ---------------- */
+  function renderSettingsFilaments() {
+    $('#setFilaments').innerHTML = settings.filaments.map((t, i) => `<div class="set-fil" data-i="${i}">
+        <input type="text" value="${esc(t.name)}" data-k="name" placeholder="Name, e.g. PLA Matte" aria-label="Filament name" autocomplete="off">
+        <span class="unit"><input type="number" min="0" step="any" inputmode="decimal" value="${esc(t.price)}" data-k="price" aria-label="Price per kilogram"><em>€/kg</em></span>
+        <button type="button" class="icon-btn" data-act="remove" aria-label="Remove filament">×</button>
+      </div>`).join('') || '<p class="hint">No saved filaments. Add one to pick it on the Quote tab.</p>';
+  }
+  function renderWear() {
+    $('#wearOut').textContent = `Wear cost: ${fmt(wearPerHour(settings))} per print hour (printer price ÷ lifetime + maintenance).`;
+  }
+  function renderSettings() {
+    $$('[data-setting]').forEach(el => { el.value = settings[el.dataset.setting]; });
+    renderSettingsFilaments();
+    renderWear();
+  }
+  function settingsChanged() {
+    saveSettings();
+    renderWear();
+    relinkJobFilaments();
+    renderJobFilaments();
+    jobChanged();
+  }
+
+  $('#tab-settings').addEventListener('input', e => {
+    const key = e.target.dataset.setting;
+    if (key) { settings[key] = num(e.target.value); settingsChanged(); return; }
+    const k = e.target.dataset.k;
+    const row = e.target.closest('.set-fil');
+    if (!k || !row) return;
+    const t = settings.filaments[+row.dataset.i];
+    t[k] = k === 'price' ? num(e.target.value) : e.target.value;
+    settingsChanged();
+  });
+
+  $('#setFilaments').addEventListener('click', e => {
+    const btn = e.target.closest('[data-act="remove"]');
+    if (!btn) return;
+    const [removed] = settings.filaments.splice(+btn.closest('.set-fil').dataset.i, 1);
+    job.filaments.forEach(f => { if (f.typeId === removed.id) { f.typeId = 'custom'; f.label = removed.name; } });
+    renderSettingsFilaments();
+    settingsChanged();
+  });
+
+  $('#addSetFilament').addEventListener('click', () => {
+    settings.filaments.push({ id: uid(), name: '', price: 0 });
+    renderSettingsFilaments();
+    settingsChanged();
+    const names = $$('#setFilaments [data-k="name"]');
+    names[names.length - 1].focus();
+  });
+
+  $('#resetSettings').addEventListener('click', e => {
+    confirmClick(e.currentTarget, 'Reset all rates?', () => {
+      const names = job.filaments.map(f => (settings.filaments.find(t => t.id === f.typeId) || {}).name || f.label || '');
+      settings = clone(DEFAULT_SETTINGS);
+      job.filaments.forEach((f, i) => {
+        const t = names[i] && matchFilament(names[i]);
+        if (t) { f.typeId = t.id; f.custom = false; } else { f.typeId = 'custom'; f.label = names[i]; }
+      });
+      renderSettings();
+      settingsChanged();
+      const btn = $('#resetSettings');
+      delete btn.dataset.armed; btn.textContent = 'Reset to defaults'; btn.classList.remove('danger');
+      toast('Rates reset to defaults');
+    });
+  });
+
+  /* ---------------- tabs ---------------- */
+  function switchTab(name) {
+    $$('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+    $$('.tabpanel').forEach(p => { p.hidden = p.id !== 'tab-' + name; });
+    window.scrollTo(0, 0);
+  }
+  $('.tabs').addEventListener('click', e => {
+    const tab = e.target.closest('.tab');
+    if (tab) switchTab(tab.dataset.tab);
+  });
+
+  /* ---------------- start ---------------- */
+  relinkJobFilaments();
+  syncJobInputs();
+  renderJobFilaments();
+  renderSettings();
+  renderSummary();
+  renderHistory();
+})();
+</script>
+</body>
+</html>
