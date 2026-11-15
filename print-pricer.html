@@ -731,7 +731,7 @@
   }
   function blankJob() {
     return {
-      item: '', autoItem: '', customer: '', date: todayISO(),
+      item: '', customer: '', date: todayISO(),
       filaments: [newFilamentRow()],
       printH: '', printM: '', itemsPerPrint: 1, qty: 1,
       designH: '', designM: '', postH: '', postM: '',
@@ -1039,16 +1039,9 @@
 
     clearImport();
     imported = { fileName: file.name, plates, selection: plates.length > 1 ? 'all' : plates[0].index };
-    suggestItemName(file.name.replace(/(\.gcode)?\.3mf$/i, ''));
+    if (!String(job.item).trim()) job.item = file.name.replace(/(\.gcode)?\.3mf$/i, '');
     applyImportSelection();
     renderImport();
-  }
-
-  // Names the quote after the imported print, unless a name was typed in by hand.
-  function suggestItemName(name) {
-    name = String(name || '').trim();
-    if (!name) return;
-    if (!String(job.item).trim() || job.item === job.autoItem) { job.item = name; job.autoItem = name; }
   }
 
   const matchFilament = type => {
@@ -1099,7 +1092,7 @@
       const on = selection === p.index;
       const inner = `${multi ? `<input type="radio" name="plate" value="${p.index}"${on ? ' checked' : ''}>` : ''}
         ${p.thumb ? `<img src="${p.thumb}" alt="">` : (anyThumb ? '<span class="noimg"></span>' : '')}
-        <span class="plate-main"><strong>${p.label ? esc(p.label) : `Plate ${p.index}${p.name ? ' · ' + esc(p.name) : ''}`}</strong><span class="hint">${esc(details(p))}</span></span>`;
+        <span class="plate-main"><strong>Plate ${p.index}${p.name ? ' · ' + esc(p.name) : ''}</strong><span class="hint">${esc(details(p))}</span></span>`;
       return multi ? `<label class="plate${on ? ' on' : ''}">${inner}</label>` : `<div class="plate on">${inner}</div>`;
     };
     const allRow = () => {
@@ -1156,69 +1149,6 @@
     const file = e.dataTransfer.files[0];
     if (file) { switchTab('quote'); importFile(file); }
   });
-
-  /* ---------------- sent from Bambu Studio ---------------- */
-  function slicedLabel(seconds, exact) {
-    const d = new Date(num(seconds) * 1000);
-    if (!num(seconds) || Number.isNaN(d.getTime())) return 'Sliced plate';
-    const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: exact ? '2-digit' : undefined });
-    if (d.toDateString() === new Date().toDateString()) return `Sliced at ${time}`;
-    return `Sliced ${d.toLocaleDateString([], { day: 'numeric', month: 'short' })} at ${time}`;
-  }
-
-  // "Send to Pricer" (bambu-studio/send-to-pricer.ps1) opens this page with the last sliced print packed
-  // into the address after "#slice=". Unpacked, it is
-  //   { n: project name, p: [[sliced at, print time in seconds, [[type, colour, grams], ...]], ...] }
-  // Anyone can make such a link, so every value is checked before it is used.
-  function readSentSlice() {
-    const match = /^#slice=([A-Za-z0-9_-]+)$/.exec(location.hash);
-    if (!match) return;
-    history.replaceState(null, '', location.pathname + location.search);
-    switchTab('quote');
-
-    let data = null;
-    try {
-      const bytes = Uint8Array.from(atob(match[1].replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
-      data = JSON.parse(new TextDecoder().decode(bytes));
-    } catch { /* reported below */ }
-
-    const plates = [];
-    (data && Array.isArray(data.p) ? data.p : []).slice(0, 24).forEach(p => {
-      if (!Array.isArray(p)) return;
-      const filaments = (Array.isArray(p[2]) ? p[2] : []).slice(0, 32).filter(Array.isArray).map(f => ({
-        slot: '',
-        type: String(f[0] ?? '').trim().slice(0, 40) || 'Filament',
-        color: cleanColor(String(f[1] ?? '')),
-        grams: num(f[2]),
-      })).filter(f => f.grams > 0);
-      const seconds = num(p[1]);
-      if (!seconds && !filaments.length) return;
-      plates.push({
-        index: plates.length + 1, seconds, grams: filaments.reduce((t, f) => t + f.grams, 0), filaments,
-        objects: 0, name: '', thumb: '', slicedAt: p[0],
-      });
-    });
-
-    // With several plates the seconds are shown, because a small project slices within one minute.
-    plates.forEach(p => { p.label = slicedLabel(p.slicedAt, plates.length > 1); });
-
-    if (!plates.length) {
-      return showImportError(data && data.e === 'none'
-        ? 'No sliced print was found. Slice a plate in Bambu Studio, then press Send to Pricer again. '
-          + 'If this keeps happening, check that the post-processing line is set in the process preset you slice with.'
-        : 'The print sent from Bambu Studio could not be read. Slice the plate again, then press Send to Pricer once more.');
-    }
-
-    const name = String(data.n ?? '').trim().slice(0, 120);
-    showImportError('');
-    clearImport();
-    imported = { fileName: name ? `From Bambu Studio · ${name}` : 'From Bambu Studio', plates, selection: plates.length > 1 ? 'all' : plates[0].index };
-    suggestItemName(name);
-    applyImportSelection();
-    renderImport();
-    toast('Print received from Bambu Studio');
-  }
-  window.addEventListener('hashchange', readSentSlice);
 
   /* ---------------- quote history ---------------- */
   function renderHistory() {
@@ -1446,8 +1376,6 @@
   if (window.ResizeObserver) new ResizeObserver(moveThumb).observe($('.tabs'));
   window.addEventListener('resize', moveThumb);
   requestAnimationFrame(() => requestAnimationFrame(() => $('.tabs').classList.add('ready')));
-
-  readSentSlice();
 })();
 </script>
 </body>
