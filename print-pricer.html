@@ -8,13 +8,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Print Pricer">
-<meta name="theme-color" content="#eef1f6" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0a0d12" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f7f1ec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#100b08" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f766e'/%3E%3Cpath d='M16 7l8 4.5v9L16 25l-8-4.5v-9z M8 11.5l8 4.5 8-4.5 M16 16v9' fill='none' stroke='%23fff' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23ea580c'/%3E%3Cpath d='M16 7l8 4.5v9L16 25l-8-4.5v-9z M8 11.5l8 4.5 8-4.5 M16 16v9' fill='none' stroke='%23fff' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
   :root {
-    --bg: #eef1f6;
+    --bg: #f7f1ec;
     --solid: #ffffff;
     --text: #141920;
     --muted: #586273;
@@ -29,9 +29,9 @@
     --fill-strong: rgba(108, 120, 142, .19);
     --field: rgba(255, 255, 255, .66);
     --menu: #ffffff;
-    --accent: #0f766e;
+    --accent: #ea580c;
     --accent-ink: #ffffff;
-    --accent-soft: rgba(15, 118, 110, .11);
+    --accent-soft: rgba(255, 98, 0, .15);
     --danger: #b42318;
     --danger-soft: rgba(217, 45, 32, .10);
     --warn: #8a5a00;
@@ -47,19 +47,19 @@
     --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23586273' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E");
     --search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23586273' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='4.5'/%3E%3Cpath d='m10.5 10.5 3 3'/%3E%3C/svg%3E");
     --wash:
-      radial-gradient(70vmax 60vmax at 4% 18%, rgba(52, 199, 176, .30), transparent 62%),
-      radial-gradient(60vmax 55vmax at 100% 24%, rgba(84, 144, 255, .27), transparent 62%),
-      radial-gradient(65vmax 60vmax at 92% 100%, rgba(168, 128, 255, .21), transparent 62%),
-      radial-gradient(55vmax 50vmax at 4% 100%, rgba(255, 176, 122, .19), transparent 62%);
+      radial-gradient(70vmax 60vmax at 4% 18%, rgba(255, 106, 20, .30), transparent 62%),
+      radial-gradient(60vmax 55vmax at 100% 24%, rgba(255, 168, 60, .28), transparent 62%),
+      radial-gradient(65vmax 60vmax at 92% 100%, rgba(226, 70, 20, .20), transparent 62%),
+      radial-gradient(55vmax 50vmax at 4% 100%, rgba(255, 196, 140, .26), transparent 62%);
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0a0d12;
-      --solid: #1a1e24;
+      --bg: #100b08;
+      --solid: #211a16;
       --text: #eef1f5;
       --muted: #a2acba;
-      --glass: rgba(40, 46, 58, .52);
-      --glass-strong: rgba(54, 62, 76, .66);
+      --glass: rgba(58, 44, 36, .50);
+      --glass-strong: rgba(74, 56, 46, .64);
       --thumb: rgba(255, 255, 255, .16);
       --rim-a: rgba(255, 255, 255, .26);
       --rim-b: rgba(255, 255, 255, .05);
@@ -68,10 +68,10 @@
       --fill: rgba(150, 160, 180, .13);
       --fill-strong: rgba(150, 160, 180, .22);
       --field: rgba(255, 255, 255, .06);
-      --menu: #1c2129;
-      --accent: #3ccfbd;
-      --accent-ink: #04211d;
-      --accent-soft: rgba(60, 207, 189, .15);
+      --menu: #241c18;
+      --accent: #ff6a1a;
+      --accent-ink: #2a0f00;
+      --accent-soft: rgba(255, 106, 26, .20);
       --danger: #ff8f85;
       --danger-soft: rgba(255, 110, 96, .15);
       --warn: #f0c868;
@@ -83,10 +83,10 @@
       --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23a2acba' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E");
       --search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23a2acba' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='4.5'/%3E%3Cpath d='m10.5 10.5 3 3'/%3E%3C/svg%3E");
       --wash:
-        radial-gradient(70vmax 60vmax at 4% 18%, rgba(24, 170, 150, .30), transparent 62%),
-        radial-gradient(60vmax 55vmax at 100% 24%, rgba(52, 98, 255, .28), transparent 62%),
-        radial-gradient(65vmax 60vmax at 92% 100%, rgba(132, 86, 255, .22), transparent 62%),
-        radial-gradient(55vmax 50vmax at 4% 100%, rgba(255, 122, 74, .11), transparent 62%);
+        radial-gradient(70vmax 60vmax at 4% 18%, rgba(255, 90, 10, .34), transparent 62%),
+        radial-gradient(60vmax 55vmax at 100% 24%, rgba(198, 61, 0, .30), transparent 62%),
+        radial-gradient(65vmax 60vmax at 92% 100%, rgba(255, 120, 30, .24), transparent 62%),
+        radial-gradient(55vmax 50vmax at 4% 100%, rgba(140, 40, 0, .26), transparent 62%);
     }
   }
   /* Solid panels where glass cannot be drawn, or where the reader asked for less of it. */
